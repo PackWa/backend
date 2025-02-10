@@ -1,0 +1,861 @@
+openapi: 3.0.0
+info:
+  title: User API
+  version: 1.0.0
+  description: API для управления пользователем, его клиентами, продуктами и заказами
+servers:
+  - url: http://localhost:5000
+    description: Локальный сервер разработки
+tags:
+  - name: user
+    description: operations with user
+  - name: client
+    description: operations with clients
+  - name: product
+    description: operations with product
+  - name: order
+    description: operations with order
+
+paths:
+  /user/register:
+    post:
+      tags:
+        - user
+      summary: Регистрация нового пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                firstname:
+                  type: string
+                lastname:
+                  type: string
+                phone:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully"
+        '400':
+          description: Ошибка валидации данных
+        '409':
+          description: Пользователь с таким email уже существует
+
+  /user/login:
+    post:
+      tags:
+        - user
+      summary: Вход пользователя в систему
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login successful"
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: Ошибка валидации данных
+        '401':
+          description: Неверный email или пароль
+
+  /user/me:
+    get:
+      tags:
+       - user
+      summary: Информация о пользователе
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Успешное получение данных пользователя
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  email:
+                    type: string
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  phone:
+                    type: string
+                example:
+                  id: 1
+                  email: user@example.com
+                  first_name: Иван
+                  last_name: Иванов
+                  phone: "+79161234567"
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: "User not found"
+
+  /client/:
+    post:
+      tags:
+        - client
+      summary: Создание нового клиента
+      description: Создает нового клиента для аутентифицированного пользователя. Данные передаются в формате JSON.
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  description: Имя клиента
+                  example: "Иван"
+                last_name:
+                  type: string
+                  description: Фамилия клиента (опционально)
+                  example: "Иванов"
+                phone:
+                  type: string
+                  description: Телефон клиента (опционально)
+                  example: "+7 1234567890"
+              required:
+                - first_name
+      responses:
+        '201':
+          description: Клиент успешно создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  first_name:
+                    type: string
+                    example: "Иван"
+                  last_name:
+                    type: string
+                    example: "Иванов"
+                  phone:
+                    type: string
+                    example: "+7 1234567890"
+                  user_id:
+                    type: integer
+                    example: 42
+        '400':
+          description: Ошибка валидации или ошибка при создании клиента
+
+    get:
+      tags:
+        - client
+      summary: Получение списка клиентов
+      description: Возвращает список клиентов, принадлежащих аутентифицированному пользователю.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Список клиентов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    first_name:
+                      type: string
+                      example: "Иван"
+                    last_name:
+                      type: string
+                      example: "Иванов"
+                    phone:
+                      type: string
+                      example: "+7 1234567890"
+                    user_id:
+                      type: integer
+                      example: 42
+        '400':
+          description: Ошибка валидации
+
+  /client/{client_id}:
+    get:
+      tags:
+        - client
+      summary: Получение информации о клиенте
+      description: Возвращает информацию о клиенте по указанному идентификатору. Клиент должен принадлежать аутентифицированному пользователю.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: client_id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор клиента
+      responses:
+        '200':
+          description: Информация о клиенте
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  first_name:
+                    type: string
+                    example: "Иван"
+                  last_name:
+                    type: string
+                    example: "Иванов"
+                  phone:
+                    type: string
+                    example: "+7 1234567890"
+                  user_id:
+                    type: integer
+                    example: 42
+        '403':
+          description: Доступ запрещен (клиент не принадлежит текущему пользователю)
+        '404':
+          description: Клиент не найден
+
+    put:
+      tags:
+        - client
+      summary: Обновление информации о клиенте
+      description: Обновляет данные клиента. Допускается частичное обновление (одно или несколько полей).
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: client_id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор клиента для обновления
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                  description: Новое имя клиента
+                  example: "Пётр"
+                last_name:
+                  type: string
+                  description: Новая фамилия клиента
+                  example: "Петров"
+                phone:
+                  type: string
+                  description: Новый телефон клиента
+                  example: "+7 9876543210"
+      responses:
+        '200':
+          description: Клиент успешно обновлён
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  first_name:
+                    type: string
+                    example: "Пётр"
+                  last_name:
+                    type: string
+                    example: "Петров"
+                  phone:
+                    type: string
+                    example: "+7 9876543210"
+                  user_id:
+                    type: integer
+                    example: 42
+        '400':
+          description: Ошибка валидации или отсутствие корректных данных для обновления
+        '403':
+          description: Доступ запрещен
+
+    delete:
+      tags:
+        - client
+      summary: Удаление клиента
+      description: Удаляет клиента, принадлежащего аутентифицированному пользователю.
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - in: path
+          name: client_id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор клиента для удаления
+      responses:
+        '200':
+          description: Клиент успешно удалён
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Client deleted successfully"
+        '403':
+          description: Доступ запрещен
+        '404':
+          description: Клиент не найден
+
+
+  /product/:
+    post:
+      tags:
+        - product
+      summary: Создание нового продукта
+      description: Создает новый продукт для аутентифицированного пользователя. Данные передаются в формате multipart/form-data.
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Название продукта
+                  example: "Новый продукт"
+                description:
+                  type: string
+                  description: Описание продукта
+                  example: "Описание нового продукта"
+                price:
+                  type: number
+                  format: float
+                  description: Цена продукта
+                  example: 9.99
+                photo:
+                  type: string
+                  format: binary
+                  description: Фотография продукта (файл)
+              required:
+                - title
+                - price
+      responses:
+        '201':
+          description: Продукт успешно создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  title:
+                    type: string
+                    example: "Новый продукт"
+                  description:
+                    type: string
+                    example: "Описание нового продукта"
+                  price:
+                    type: number
+                    format: float
+                    example: 9.99
+                  photo:
+                    type: string
+                    example: "20250210123045_abcd1234.jpg"
+                  user_id:
+                    type: integer
+                    example: 42
+        '400':
+          description: Ошибка валидации или проблемы с загрузкой файла
+
+    get:
+      tags:
+        - product
+      summary: Получение списка продуктов пользователя
+      description: Возвращает все продукты, принадлежащие аутентифицированному пользователю.
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Список продуктов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    title:
+                      type: string
+                      example: "Новый продукт"
+                    description:
+                      type: string
+                      example: "Описание нового продукта"
+                    price:
+                      type: number
+                      format: float
+                      example: 9.99
+                    photo:
+                      type: string
+                      example: "20250210123045_abcd1234.jpg"
+                    user_id:
+                      type: integer
+                      example: 42
+
+  /product/{product_id}:
+      put:
+        tags:
+          - product
+        summary: Обновление информации о продукте
+        description: Обновляет данные продукта, принадлежащего аутентифицированному пользователю. Допускается передача данных как в формате JSON, так и в формате multipart/form-data.
+        security:
+          - bearerAuth: [ ]
+        parameters:
+          - in: path
+            name: product_id
+            schema:
+              type: integer
+            required: true
+            description: Идентификатор продукта для обновления
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                    description: Новое название продукта
+                    example: "Обновленный продукт"
+                  description:
+                    type: string
+                    description: Новое описание продукта
+                    example: "Новое описание"
+                  price:
+                    type: number
+                    format: float
+                    description: Новая цена продукта
+                    example: 19.99
+            multipart/form-data:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  price:
+                    type: number
+                    format: float
+                  photo:
+                    type: string
+                    format: binary
+        responses:
+          '200':
+            description: Продукт успешно обновлен
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 1
+                    title:
+                      type: string
+                      example: "Обновленный продукт"
+                    description:
+                      type: string
+                      example: "Новое описание"
+                    price:
+                      type: number
+                      format: float
+                      example: 19.99
+                    photo:
+                      type: string
+                      example: "20250210124500_efgh5678.jpg"
+                    user_id:
+                      type: integer
+                      example: 42
+          '400':
+            description: Ошибка валидации или отсутствие данных для обновления
+          '403':
+            description: Доступ запрещен (продукт не принадлежит пользователю)
+
+      delete:
+        tags:
+          - product
+        summary: Удаление продукта
+        description: Удаляет продукт, принадлежащий аутентифицированному пользователю.
+        security:
+          - bearerAuth: [ ]
+        parameters:
+          - in: path
+            name: product_id
+            schema:
+              type: integer
+            required: true
+            description: Идентификатор продукта для удаления
+        responses:
+          '200':
+            description: Продукт успешно удален
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: "Product deleted"
+          '404':
+            description: Продукт не найден или доступ запрещен
+
+  /product/photo/{filename}:
+      get:
+        tags:
+          - product
+        summary: Получение фотографии продукта
+        description: Возвращает изображение, сохраненное на сервере, по его имени.
+        security:
+          - bearerAuth: [ ]
+        parameters:
+          - in: path
+            name: filename
+            schema:
+              type: string
+            required: true
+            description: Имя файла фотографии
+        responses:
+          '200':
+            description: Фотография продукта
+            content:
+              image/*:
+                schema:
+                  type: string
+                  format: binary
+          '404':
+            description: Файл не найден
+
+  /order/:
+    post:
+      tags:
+        - order
+      summary: Создание нового заказа
+      description: Создает новый заказ для аутентифицированного пользователя. В теле запроса передаются данные заказа, включая список продуктов.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Название заказа
+                  example: "Заказ №1"
+                address:
+                  type: string
+                  description: Адрес доставки
+                  example: "ул. Ленина, 10"
+                date:
+                  type: string
+                  format: date-time
+                  description: Дата и время заказа (в формате ISO)
+                  example: "2025-02-10T15:00:00Z"
+                client_id:
+                  type: integer
+                  description: Идентификатор клиента (если заказ привязан к клиенту)
+                  example: 5
+                products:
+                  type: array
+                  description: Список продуктов в заказе
+                  items:
+                    type: object
+                    properties:
+                      product_id:
+                        type: integer
+                        description: Идентификатор продукта
+                        example: 1
+                      quantity:
+                        type: integer
+                        description: Количество продукта
+                        example: 2
+                      price_at_order:
+                        type: number
+                        format: float
+                        description: Цена продукта на момент заказа
+                        example: 19.99
+              required:
+                - title
+                - date
+      responses:
+        '201':
+          description: Заказ успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Ошибка валидации или некорректные данные
+
+    get:
+      tags:
+        - order
+      summary: Получение списка заказов
+      description: Возвращает список всех заказов, созданных аутентифицированным пользователем.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список заказов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+
+  /order/{order_id}:
+    get:
+      tags:
+        - order
+      summary: Получение заказа по идентификатору
+      description: Возвращает информацию о заказе по его идентификатору, если заказ принадлежит аутентифицированному пользователю.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор заказа
+      responses:
+        '200':
+          description: Информация о заказе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Заказ не найден или не принадлежит пользователю
+
+    put:
+      tags:
+        - order
+      summary: Обновление заказа
+      description: Обновляет данные заказа, принадлежащего аутентифицированному пользователю. Допускается частичное обновление.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор заказа для обновления
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Новое название заказа
+                  example: "Обновленный заказ №1"
+                address:
+                  type: string
+                  description: Новый адрес доставки
+                  example: "ул. Гагарина, 5"
+                date:
+                  type: string
+                  format: date-time
+                  description: Новая дата и время заказа (в формате ISO)
+                  example: "2025-02-11T10:00:00Z"
+                client_id:
+                  type: integer
+                  description: Новый идентификатор клиента
+                  example: 6
+                products:
+                  type: array
+                  description: Обновленный список продуктов в заказе
+                  items:
+                    type: object
+                    properties:
+                      product_id:
+                        type: integer
+                        description: Идентификатор продукта
+                        example: 2
+                      quantity:
+                        type: integer
+                        description: Количество продукта
+                        example: 3
+                      price_at_order:
+                        type: number
+                        format: float
+                        description: Цена продукта на момент заказа
+                        example: 29.99
+      responses:
+        '200':
+          description: Заказ успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Ошибка валидации или некорректные данные
+        '403':
+          description: Доступ запрещен
+
+    delete:
+      tags:
+        - order
+      summary: Удаление заказа
+      description: Удаляет заказ, принадлежащий аутентифицированному пользователю.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор заказа для удаления
+      responses:
+        '200':
+          description: Заказ успешно удален
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Order deleted"
+        '404':
+          description: Заказ не найден или доступ запрещен
+
+
+
+components:
+  schemas:
+    OrderProduct:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          description: Идентификатор продукта
+          example: 1
+        quantity:
+          type: integer
+          description: Количество продукта
+          example: 2
+        price_at_order:
+          type: number
+          format: float
+          description: Цена продукта на момент заказа
+          example: 19.99
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        title:
+          type: string
+          description: Название заказа
+          example: "Заказ №1"
+        address:
+          type: string
+          description: Адрес доставки
+          example: "ул. Ленина, 10"
+        date:
+          type: string
+          format: date-time
+          description: Дата и время заказа
+          example: "2025-02-10T15:00:00Z"
+        client_id:
+          type: integer
+          description: Идентификатор клиента
+          example: 5
+        user_id:
+          type: integer
+          description: Идентификатор пользователя, создавшего заказ
+          example: 42
+        products:
+          type: array
+          description: Список продуктов, входящих в заказ
+          items:
+            $ref: '#/components/schemas/OrderProduct'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
