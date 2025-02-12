@@ -40,10 +40,10 @@ def create_app(config_class=Config):
     from app.client.route import client_bp
     from app.order.route import order_bp
 
-    app.register_blueprint(user_bp, url_prefix='/user')
-    app.register_blueprint(product_bp, url_prefix='/product')
-    app.register_blueprint(client_bp, url_prefix='/client')
-    app.register_blueprint(order_bp, url_prefix='/order')
+    app.register_blueprint(user_bp, url_prefix='/api/user')
+    app.register_blueprint(product_bp, url_prefix='/api/product')
+    app.register_blueprint(client_bp, url_prefix='/api/client')
+    app.register_blueprint(order_bp, url_prefix='/api/order')
 
     # Создание таблиц при первом запуске
     with app.app_context():
