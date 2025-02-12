@@ -16,6 +16,7 @@ def create_product(user_id):
 
     # Обрабатываем multipart/form-data
     data = request.form.to_dict()
+    print(data)
     data['user_id'] = user_id
     photo_file = request.files.get('photo')
 
@@ -55,7 +56,7 @@ def update_product(user_id, product_id):
         return jsonify({'error': 'Invalid user id'}), 400
 
     product = Product.query.get(product_id)
-
+    print(product)
     if not product or product.user_id != user_id:
         return jsonify({'error': 'Access denied'}), 403
 
@@ -106,6 +107,9 @@ def delete_product(user_id, product_id):
 @product_bp.route('/photo/<filename>', methods=['GET'])
 @token_required
 def get_photo(user_id, filename):
+    print(int(user_id))
+    print("work")
+    print(filename)
     return send_from_directory(
         directory=current_app.config['UPLOAD_FOLDER'],
         path=filename,
