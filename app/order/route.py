@@ -68,14 +68,13 @@ def update_order(user_id, order_id):
     # Валидация
     data = request.json
     schema = OrderSchema(partial=True)
-    errors = schema.validate(data)
-    if errors:
-        return jsonify(errors), 400
-
-    print()
+    try:
+        validated_data = schema.load(data)  # Валидация + преобразование
+    except ValidationError as err:
+        return jsonify(err.messages), 400
 
     # Обновление
-    updated_order, errors = OrderService.update_order(user_id, order, data)
+    updated_order, errors = OrderService.update_order(user_id, order, validated_data)
     if errors:
         return jsonify(errors), 400
 

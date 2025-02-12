@@ -102,7 +102,7 @@ class OrderService:
             if 'address' in update_data:
                 order.address = update_data.get('address')
             if 'date' in update_data:
-                order.date = datetime.strptime(update_data['date'], '%Y-%m-%d').date()
+                order.date = update_data['date']
             if 'client_id' in update_data:
                 order.client_id = update_data.get('client_id')
 
